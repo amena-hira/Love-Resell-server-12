@@ -10,7 +10,7 @@ app.use(cors());
 app.use(express.json());
 
 
-const { MongoClient, ServerApiVersion } = require('mongodb');
+const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.cwbwt8c.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
@@ -21,7 +21,7 @@ async function run() {
 
     app.get('/category',async(req,res)=>{
         const query = {};
-        const result = await categoryCollection.find(query).toArray();
+        const result = await categoryCollection.find(query).limit(3).toArray();
         res.send(result)
     })
 
@@ -47,9 +47,33 @@ async function run() {
     })
 
     // ---------------Product--------------
+    app.get('/products',async(req,res)=>{
+        const query = {};
+        const result = await productCollection.find(query).toArray();
+        res.send(result)
+    })
+    app.get('/products/:id', async (req, res) => {
+        const id = req.params.id;
+        const query = { category: id };
+        const result = await productCollection.find(query).toArray();
+        res.send(result);
+    })
     app.post('/products', async (req, res) => {
         const product = req.body;
         const result = await productCollection.insertOne(product);
+        res.send(result);
+    });
+    app.put('/products/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                availableStatus: 'sold'
+            }
+        }
+        console.log(filter,options,updatedDoc);
+        const result = await productCollection.updateOne(filter, updatedDoc, options);
         res.send(result);
     });
 
