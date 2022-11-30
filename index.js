@@ -19,6 +19,12 @@ console.log(uri)
 async function run() {
     const categoryCollection = client.db('loveresell').collection('category');
 
+    app.get('/category',async(req,res)=>{
+        const query = {};
+        const result = await categoryCollection.find(query).toArray();
+        res.send(result)
+    })
+
     app.post('/category',async(req,res)=>{
         const category = req.body;
         console.log(category);
