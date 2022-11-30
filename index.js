@@ -14,10 +14,9 @@ const { MongoClient, ServerApiVersion } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.cwbwt8c.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
-console.log(uri)
-
 async function run() {
     const categoryCollection = client.db('loveresell').collection('category');
+    const usersCollection = client.db('loveresell').collection('users');
 
     app.get('/category',async(req,res)=>{
         const query = {};
@@ -30,6 +29,20 @@ async function run() {
         console.log(category);
         const result = await categoryCollection.insertOne(category);
         res.send(result)
+    })
+
+    // -----------------user-------------------
+    app.post('/users', async (req, res) => {
+        const user = req.body;
+        console.log(user);
+        const result = await usersCollection.insertOne(user);
+        res.send(result);
+    });
+    app.get('/users/seller/:email', async (req, res) => {
+        const email = req.params.email;
+        const query = { email }
+        const user = await usersCollection.findOne(query);
+        res.send({ isSeller: user?.status === 'seller' });
     })
 
 }
