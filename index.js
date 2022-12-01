@@ -50,6 +50,12 @@ async function run() {
         const sellers = await usersCollection.find(query).toArray();
         res.send(sellers);
     })
+    app.delete('/users/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) };
+        const result = await usersCollection.deleteOne(filter);
+        res.send(result);
+    })
     // --------------seller verify-----------------
     app.put('/users/sellers/:id', async (req, res) => {
         const id = req.params.id;
@@ -157,6 +163,19 @@ async function run() {
     app.post('/orders', async (req, res) => {
         const user = req.body;
         const result = await orderCollection.insertOne(user);
+        res.send(result);
+    });
+    app.put('/orders/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                paid: true
+            }
+        }
+        console.log(filter,options,updatedDoc);
+        const result = await orderCollection.updateOne(filter, updatedDoc, options);
         res.send(result);
     });
     
