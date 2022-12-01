@@ -49,6 +49,20 @@ async function run() {
         const sellers = await usersCollection.find(query).toArray();
         res.send(sellers);
     })
+    // --------------seller verify-----------------
+    app.put('/users/sellers/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                verify: true
+            }
+        }
+        const sellers = await usersCollection.updateOne(filter, updatedDoc, options);
+        res.send(sellers);
+    })
+    // -------------Hook Seller and Admin-----------------
     app.get('/users/seller/:email', async (req, res) => {
         const email = req.params.email;
         const query = { email }
@@ -62,7 +76,14 @@ async function run() {
         res.send({ isAdmin: user?.status === 'admin' });
     })
 
-    // ---------------Product--------------
+    // ---------------Product search based on seller email--------------
+    app.get('/products/seller',async(req,res)=>{
+        const email = req.query.email;
+        const query = {email};
+        const result = await productCollection.find(query).toArray();
+        res.send(result)
+    })
+    // -----------------Product-------------------
     app.get('/products',async(req,res)=>{
         const query = {};
         const result = await productCollection.find(query).toArray();
