@@ -18,6 +18,7 @@ async function run() {
     const categoryCollection = client.db('loveresell').collection('category');
     const usersCollection = client.db('loveresell').collection('users');
     const productCollection = client.db('loveresell').collection('products');
+    const orderCollection = client.db('loveresell').collection('orders');
 
     app.get('/category',async(req,res)=>{
         const query = {};
@@ -143,6 +144,13 @@ async function run() {
         }
         console.log(filter,options,updatedDoc);
         const result = await productCollection.updateOne(filter, updatedDoc, options);
+        res.send(result);
+    });
+
+    // --------------Order----------------
+    app.post('/orders', async (req, res) => {
+        const user = req.body;
+        const result = await orderCollection.insertOne(user);
         res.send(result);
     });
 
