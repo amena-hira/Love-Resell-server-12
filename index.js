@@ -33,12 +33,22 @@ async function run() {
     })
 
     // -----------------user-------------------
+    app.get('/users',async(req,res)=>{
+        const query = {};
+        const result = await usersCollection.find(query).toArray();
+        res.send(result)
+    })
     app.post('/users', async (req, res) => {
         const user = req.body;
         console.log(user);
         const result = await usersCollection.insertOne(user);
         res.send(result);
     });
+    app.get('/users/sellers', async (req, res) => {
+        const query = { status: 'seller' }
+        const sellers = await usersCollection.find(query).toArray();
+        res.send(sellers);
+    })
     app.get('/users/seller/:email', async (req, res) => {
         const email = req.params.email;
         const query = { email }
