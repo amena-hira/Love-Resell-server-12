@@ -148,11 +148,18 @@ async function run() {
     });
 
     // --------------Order----------------
+    app.get('/orders',async(req,res)=>{
+        const email = req.query.email;
+        const query = {email};
+        const result = await orderCollection.find(query).toArray();
+        res.send(result)
+    })
     app.post('/orders', async (req, res) => {
         const user = req.body;
         const result = await orderCollection.insertOne(user);
         res.send(result);
     });
+    
 
 }
 
