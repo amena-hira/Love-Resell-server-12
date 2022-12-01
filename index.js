@@ -20,13 +20,13 @@ async function run() {
     const productCollection = client.db('loveresell').collection('products');
     const orderCollection = client.db('loveresell').collection('orders');
 
-    app.get('/category',async(req,res)=>{
+    app.get('/category', async (req, res) => {
         const query = {};
         const result = await categoryCollection.find(query).limit(3).toArray();
         res.send(result)
     })
 
-    app.post('/category',async(req,res)=>{
+    app.post('/category', async (req, res) => {
         const category = req.body;
         console.log(category);
         const result = await categoryCollection.insertOne(category);
@@ -34,7 +34,7 @@ async function run() {
     })
 
     // -----------------user-------------------
-    app.get('/users',async(req,res)=>{
+    app.get('/users', async (req, res) => {
         const query = {};
         const result = await usersCollection.find(query).toArray();
         res.send(result)
@@ -84,30 +84,31 @@ async function run() {
     })
 
     // ---------------Product search based on seller email--------------
-    app.get('/products/seller',async(req,res)=>{
+    app.get('/products/seller', async (req, res) => {
         const email = req.query.email;
-        const query = {email};
+        const query = { email };
         const result = await productCollection.find(query).toArray();
         res.send(result)
     })
-    app.get('/products/verify',async(req,res)=>{
+    app.get('/products/verify', async (req, res) => {
         const email = req.query.email;
-        const query = {email:email};
+        const query = { email: email };
         const user = await usersCollection.findOne(query);
-        res.send({isVerify: user?.verify})
+        res.send({ isVerify: user?.verify })
     })
-    
+
     // -----------------Product-------------------
-    app.get('/products',async(req,res)=>{
+    app.get('/products', async (req, res) => {
         const query = {};
         const result = await productCollection.find(query).toArray();
         res.send(result)
     })
+    
+    // -------------------category based product--------------
     app.get('/products/category/:id', async (req, res) => {
         const id = req.params.id;
-        const query = { 
+        const query = {
             category: id,
-            availableStatus: 'available'
         };
         const result = await productCollection.find(query).toArray();
         res.send(result);
@@ -123,7 +124,7 @@ async function run() {
             const result = await productCollection.insertOne(product);
             res.send(result);
         }
-        else{
+        else {
             res.send({ isSeller: false });
         }
     });
@@ -145,18 +146,32 @@ async function run() {
         const options = { upsert: true };
         const updatedDoc = {
             $set: {
-                advertise: true
+                advertise: true,
             }
         }
-        console.log(filter,options,updatedDoc);
+        console.log(filter, options, updatedDoc);
+        const result = await productCollection.updateOne(filter, updatedDoc, options);
+        res.send(result);
+    });
+    // after payment paid true added in product table
+    app.put('/product/order/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                paid: true
+            }
+        }
+        console.log(filter, options, updatedDoc);
         const result = await productCollection.updateOne(filter, updatedDoc, options);
         res.send(result);
     });
 
     // --------------Order----------------
-    app.get('/orders',async(req,res)=>{
+    app.get('/orders', async (req, res) => {
         const email = req.query.email;
-        const query = {email};
+        const query = { email };
         const result = await orderCollection.find(query).toArray();
         res.send(result)
     })
@@ -174,11 +189,11 @@ async function run() {
                 paid: true
             }
         }
-        console.log(filter,options,updatedDoc);
+        console.log(filter, options, updatedDoc);
         const result = await orderCollection.updateOne(filter, updatedDoc, options);
         res.send(result);
     });
-    
+
 
 }
 
