@@ -83,6 +83,13 @@ async function run() {
         const result = await productCollection.find(query).toArray();
         res.send(result)
     })
+    app.get('/products/verify',async(req,res)=>{
+        const email = req.query.email;
+        const query = {email:email};
+        const user = await usersCollection.findOne(query);
+        res.send({isVerify: user?.verify})
+    })
+    
     // -----------------Product-------------------
     app.get('/products',async(req,res)=>{
         const query = {};
