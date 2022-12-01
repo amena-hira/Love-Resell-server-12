@@ -45,6 +45,12 @@ async function run() {
         const user = await usersCollection.findOne(query);
         res.send({ isSeller: user?.status === 'seller' });
     })
+    app.get('/users/admin/:email', async (req, res) => {
+        const email = req.params.email;
+        const query = { email }
+        const user = await usersCollection.findOne(query);
+        res.send({ isAdmin: user?.status === 'admin' });
+    })
 
     // ---------------Product--------------
     app.get('/products',async(req,res)=>{
@@ -52,16 +58,29 @@ async function run() {
         const result = await productCollection.find(query).toArray();
         res.send(result)
     })
-    app.get('/products/:id', async (req, res) => {
+    app.get('/products/category/:id', async (req, res) => {
         const id = req.params.id;
-        const query = { category: id };
+        const query = { 
+            category: id,
+            availableStatus: 'available'
+        };
         const result = await productCollection.find(query).toArray();
         res.send(result);
     })
     app.post('/products', async (req, res) => {
         const product = req.body;
-        const result = await productCollection.insertOne(product);
-        res.send(result);
+        const email = req.query.email;
+        const query = {
+            email
+        }
+        const user = await usersCollection.findOne(query);
+        if (user?.status === 'seller') {
+            const result = await productCollection.insertOne(product);
+            res.send(result);
+        }
+        else{
+            res.send({ isSeller: false });
+        }
     });
     app.put('/products/:id', async (req, res) => {
         const id = req.params.id;
@@ -70,6 +89,18 @@ async function run() {
         const updatedDoc = {
             $set: {
                 availableStatus: 'sold'
+            }
+        }
+        const result = await productCollection.updateOne(filter, updatedDoc, options);
+        res.send(result);
+    });
+    app.put('/product/advertise/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                advertise: true
             }
         }
         console.log(filter,options,updatedDoc);
