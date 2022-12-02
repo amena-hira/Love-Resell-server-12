@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
+const jwt = require('jsonwebtoken');
 
 const app = express();
 
@@ -14,12 +15,43 @@ const { MongoClient, ServerApiVersion, ObjectId } = require('mongodb');
 const uri = `mongodb+srv://${process.env.DB_USERNAME}:${process.env.DB_PASSWORD}@cluster0.cwbwt8c.mongodb.net/?retryWrites=true&w=majority`;
 const client = new MongoClient(uri, { useNewUrlParser: true, useUnifiedTopology: true, serverApi: ServerApiVersion.v1 });
 
+function verifyJWT(req, res, next) {
+
+    const authHeader = req.headers.authorization;
+    if (!authHeader) {
+        return res.status(401).send('unauthorized access');
+    }
+
+    const token = authHeader.split(' ')[1];
+
+    jwt.verify(token, process.env.ACCESS_TOKEN, function (err, decoded) {
+        if (err) {
+            return res.status(403).send({ message: 'forbidden access' })
+        }
+        req.decoded = decoded;
+        next();
+    })
+
+}
 async function run() {
     const categoryCollection = client.db('loveresell').collection('category');
     const usersCollection = client.db('loveresell').collection('users');
     const productCollection = client.db('loveresell').collection('products');
     const orderCollection = client.db('loveresell').collection('orders');
     const reportCollection = client.db('loveresell').collection('reports');
+
+    // ---------JWT----------
+    app.get('/jwt', async (req, res) => {
+        const email = req.query.email;
+        const query = { email: email };
+        const user = await usersCollection.findOne(query);
+        if (user) {
+            const token = jwt.sign({ email }, process.env.ACCESS_TOKEN, { expiresIn: '1d' })
+            return res.send({ accessToken: token });
+        }
+        res.status(403).send({ accessToken: '' })
+    });
+    // -------------category------------
 
     app.get('/category', async (req, res) => {
         const query = {};
@@ -38,12 +70,20 @@ async function run() {
     app.get('/users', async (req, res) => {
         const query = {};
         const users = await usersCollection.find(query).toArray();
-        const result = users.filter(user=> user.name!=='Admin')
+        const result = users.filter(user => user.name !== 'Admin')
         res.send(result)
     })
     app.post('/users', async (req, res) => {
         const user = req.body;
         console.log(user);
+        const email = req.body.email;
+        const query = {}
+        const users = await usersCollection.find(query).toArray();
+        const existUser = users.find(user => user.email === email);
+        console.log(existUser)
+        if (existUser) {
+            return res.send({message: 'User is exist'})
+        }
         const result = await usersCollection.insertOne(user);
         res.send(result);
     });
@@ -105,7 +145,7 @@ async function run() {
         const result = await productCollection.find(query).toArray();
         res.send(result)
     })
-    
+
     // -------------------category based product--------------
     app.get('/products/category/:id', async (req, res) => {
         const id = req.params.id;
@@ -142,7 +182,12 @@ async function run() {
         const result = await productCollection.updateOne(filter, updatedDoc, options);
         res.send(result);
     });
-    app.put('/product/advertise/:id', async (req, res) => {
+    app.put('/product/advertise/:id', verifyJWT, async (req, res) => {
+        const email = req.query.email;
+        const decodedEmail = req.decoded.email;
+        if (email !== decodedEmail) {
+            return res.status(403).send({ message: 'forbidden access' });
+        }
         const id = req.params.id;
         const filter = { _id: ObjectId(id) }
         const options = { upsert: true };
@@ -171,8 +216,12 @@ async function run() {
     });
 
     // --------------Order----------------
-    app.get('/orders', async (req, res) => {
+    app.get('/orders', verifyJWT, async (req, res) => {
         const email = req.query.email;
+        const decodedEmail = req.decoded.email;
+        if (email !== decodedEmail) {
+            return res.status(403).send({ message: 'forbidden access' });
+        }
         const query = { email };
         const result = await orderCollection.find(query).toArray();
         res.send(result)
