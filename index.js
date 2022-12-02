@@ -3,6 +3,7 @@ const cors = require('cors');
 require('dotenv').config();
 const port = process.env.PORT || 5000;
 const jwt = require('jsonwebtoken');
+const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 
 const app = express();
 
@@ -39,6 +40,7 @@ async function run() {
     const productCollection = client.db('loveresell').collection('products');
     const orderCollection = client.db('loveresell').collection('orders');
     const reportCollection = client.db('loveresell').collection('reports');
+    const paymentCollection = client.db('loveresell').collection('payments');
 
     // ---------JWT----------
     app.get('/jwt', async (req, res) => {
@@ -82,7 +84,7 @@ async function run() {
         const existUser = users.find(user => user.email === email);
         console.log(existUser)
         if (existUser) {
-            return res.send({message: 'User is exist'})
+            return res.send({ message: 'User is exist' })
         }
         const result = await usersCollection.insertOne(user);
         res.send(result);
@@ -263,13 +265,53 @@ async function run() {
         res.send(result);
     })
 
+    // ---------Stripe Payment----------------
+    app.get('/order/payment/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) };
+        const result = await orderCollection.findOne(filter);
+        res.send(result);
+    })
+    app.post('/create-payment-intent', async (req, res) => {
+        const order = req.body;
+        const price = order.productPrice;
+        const amount = price * 100;
+        const payment = await stripe.paymentIntents.create({
+            currency: 'usd',
+            amount: amount,
+            "payment_method_types": [
+                "card"
+            ]
+        });
+        res.send({
+            clientSecret: payment.client_secret,
+        });
+    })
+    // -------------Payment store------------------
+    app.post('/payments', async(req,res)=>{
+        const payment = req.body;
+        const result = await paymentCollection.insertOne(payment);
+        const productId = payment.productId;
+        const filter = {_id: ObjectId(productId)}
+        const updatedDoc = {
+            $set: {
+                paid: true
+            }
+        }
+        const updateProduct = await productCollection.updateOne(filter,updatedDoc);
+        const orderId = payment.orderId;
+        const find = {_id: ObjectId(orderId)};
+        const updateOrder = await orderCollection.updateOne(find, updatedDoc);
+        res.send(result);
+    })
+
 
 }
 
 run().catch(console.log);
 
 app.get('/', async (req, res) => {
-    res.send('doctors portal server is running');
+    res.send('Love Resell server is running');
 })
 
-app.listen(port, () => console.log(`Doctors portal running on ${port}`))
+app.listen(port, () => console.log(`Love Resell running on ${port}`))
