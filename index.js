@@ -19,6 +19,7 @@ async function run() {
     const usersCollection = client.db('loveresell').collection('users');
     const productCollection = client.db('loveresell').collection('products');
     const orderCollection = client.db('loveresell').collection('orders');
+    const reportCollection = client.db('loveresell').collection('reports');
 
     app.get('/category', async (req, res) => {
         const query = {};
@@ -36,7 +37,8 @@ async function run() {
     // -----------------user-------------------
     app.get('/users', async (req, res) => {
         const query = {};
-        const result = await usersCollection.find(query).toArray();
+        const users = await usersCollection.find(query).toArray();
+        const result = users.filter(user=> user.name!=='Admin')
         res.send(result)
     })
     app.post('/users', async (req, res) => {
@@ -193,6 +195,24 @@ async function run() {
         const result = await orderCollection.updateOne(filter, updatedDoc, options);
         res.send(result);
     });
+
+    // -------------report-------------
+    app.get('/reports', async (req, res) => {
+        const query = {};
+        const result = await reportCollection.find(query).toArray();
+        res.send(result)
+    })
+    app.post('/reports', async (req, res) => {
+        const user = req.body;
+        const result = await reportCollection.insertOne(user);
+        res.send(result);
+    });
+    app.delete('/reports/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) };
+        const result = await reportCollection.deleteOne(filter);
+        res.send(result);
+    })
 
 
 }
