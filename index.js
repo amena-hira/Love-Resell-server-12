@@ -118,6 +118,7 @@ async function run() {
         const email = req.params.email;
         const query = { email }
         const user = await usersCollection.findOne(query);
+        console.log(user)
         res.send({ isSeller: user?.status === 'seller' });
     })
     app.get('/users/admin/:email', async (req, res) => {
@@ -147,6 +148,19 @@ async function run() {
         const result = await productCollection.find(query).toArray();
         res.send(result)
     })
+    app.put('/product/order/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                paid: true
+            }
+        }
+        console.log(filter, options, updatedDoc);
+        const result = await productCollection.updateOne(filter, updatedDoc, options);
+        res.send(result);
+    });
 
     // -------------------category based product--------------
     app.get('/products/category/:id', async (req, res) => {
@@ -216,6 +230,19 @@ async function run() {
         const result = await orderCollection.find(query).toArray();
         res.send(result)
     })
+    app.put('/orders/:id', async (req, res) => {
+        const id = req.params.id;
+        const filter = { _id: ObjectId(id) }
+        const options = { upsert: true };
+        const updatedDoc = {
+            $set: {
+                paid: true
+            }
+        }
+        console.log(filter, options, updatedDoc);
+        const result = await orderCollection.updateOne(filter, updatedDoc, options);
+        res.send(result);
+    });
     app.post('/orders', async (req, res) => {
         const user = req.body;
         const result = await orderCollection.insertOne(user);
