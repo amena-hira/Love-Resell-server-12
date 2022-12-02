@@ -203,19 +203,7 @@ async function run() {
         res.send(result);
     });
     // after payment paid true added in product table
-    app.put('/product/order/:id', async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: ObjectId(id) }
-        const options = { upsert: true };
-        const updatedDoc = {
-            $set: {
-                paid: true
-            }
-        }
-        console.log(filter, options, updatedDoc);
-        const result = await productCollection.updateOne(filter, updatedDoc, options);
-        res.send(result);
-    });
+    
 
     // --------------Order----------------
     app.get('/orders', verifyJWT, async (req, res) => {
@@ -231,19 +219,6 @@ async function run() {
     app.post('/orders', async (req, res) => {
         const user = req.body;
         const result = await orderCollection.insertOne(user);
-        res.send(result);
-    });
-    app.put('/orders/:id', async (req, res) => {
-        const id = req.params.id;
-        const filter = { _id: ObjectId(id) }
-        const options = { upsert: true };
-        const updatedDoc = {
-            $set: {
-                paid: true
-            }
-        }
-        console.log(filter, options, updatedDoc);
-        const result = await orderCollection.updateOne(filter, updatedDoc, options);
         res.send(result);
     });
 
